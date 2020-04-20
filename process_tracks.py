@@ -42,29 +42,39 @@ def get_instrument_info(path):
     note_pitch_set = set()
     note_set_map = {}
     note_pitch_set_map = {}
+    note_pitch_details = {}
     for idx, note in enumerate(notes):
         duration = note.end - note.start
+        pitch = note.pitch
         notes_info.append({
             "index": idx,
             "start": note.start - offset,
             "duration": duration,
-            "pitch": note.pitch,
+            "pitch": pitch,
         })
         note_set.add(duration)
-        note_pitch_set.add(note.pitch)
+        note_pitch_set.add(pitch)
 
         if duration not in note_set_map:
             note_set_map[duration] = 0
-        if note.pitch not in note_pitch_set_map:
-            note_pitch_set_map[note.pitch] = 0
+        if pitch not in note_pitch_set_map:
+            note_pitch_set_map[pitch] = 0
+            note_pitch_details[pitch] = {
+                "count": 0,
+                "durations": set(),
+            }
 
         note_set_map[duration] += 1
-        note_pitch_set_map[note.pitch] += 1
+        note_pitch_set_map[pitch] += 1
+        note_pitch_details[pitch]["count"] += 1
+        note_pitch_details[pitch]["durations"].add(duration)
 
         print (note)
 
     note_set = list(note_set)
     note_set.sort()
+    # To frames 60FPS
+    note_set_frame = [n * 60 for n in note_set]
 
     note_pitch_set = list(note_pitch_set)
     note_pitch_set.sort()
@@ -73,13 +83,19 @@ def get_instrument_info(path):
     note_set_map = {k: v for k, v in sorted(note_set_map.items(), key=lambda item: item[1])}
     note_pitch_set_map = {k: v for k, v in sorted(note_pitch_set_map.items(), key=lambda item: item[1])}
 
+    # Convert sets to lists
+    for k in note_pitch_details.keys():
+        note_pitch_details[k]["durations"] = list(note_pitch_details[k]["durations"])
+
     return {
         "name": instrument.name,
         "total_note": len(notes),
         "note_set": note_set,
-        "note_pitch_set": note_pitch_set,
+        "note_set_frame": note_set_frame,
         "note_set_map": note_set_map,
+        "note_pitch_set": note_pitch_set,
         "note_pitch_set_map": note_pitch_set_map,
+        "note_pitch_details": note_pitch_details,
         "notes": notes_info,
     }
 
