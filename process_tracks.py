@@ -13,7 +13,7 @@ def get_instrument_info(path):
 
         :return: The instrument's notes informations
     """
-    print (path)
+    print (f"Get instrument info for file {path}")
     mini_data = pretty_midi.PrettyMIDI(path)
 
     # NOTE: The number of instrument MUST be equaled to 1
@@ -38,15 +38,48 @@ def get_instrument_info(path):
     # the first note always starts at 0
     notes_info = []
     offset = notes[0].start
+    note_set = set()  # Store all types of note for preparation
+    note_pitch_set = set()
+    note_set_map = {}
+    note_pitch_set_map = {}
     for idx, note in enumerate(notes):
+        duration = note.end - note.start
         notes_info.append({
             "index": idx,
             "start": note.start - offset,
-            "duration": note.end - note.start,
+            "duration": duration,
+            "pitch": note.pitch,
         })
+        note_set.add(duration)
+        note_pitch_set.add(note.pitch)
+
+        if duration not in note_set_map:
+            note_set_map[duration] = 0
+        if note.pitch not in note_pitch_set_map:
+            note_pitch_set_map[note.pitch] = 0
+
+        note_set_map[duration] += 1
+        note_pitch_set_map[note.pitch] += 1
+
+        print (note)
+
+    note_set = list(note_set)
+    note_set.sort()
+
+    note_pitch_set = list(note_pitch_set)
+    note_pitch_set.sort()
+
+    # Sort by frequencies
+    note_set_map = {k: v for k, v in sorted(note_set_map.items(), key=lambda item: item[1])}
+    note_pitch_set_map = {k: v for k, v in sorted(note_pitch_set_map.items(), key=lambda item: item[1])}
 
     return {
         "name": instrument.name,
+        "total_note": len(notes),
+        "note_set": note_set,
+        "note_pitch_set": note_pitch_set,
+        "note_set_map": note_set_map,
+        "note_pitch_set_map": note_pitch_set_map,
         "notes": notes_info,
     }
 
